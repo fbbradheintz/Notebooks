@@ -6,3 +6,5 @@
 models/
 train/
 test/
+.vector_cache/
+TODO
