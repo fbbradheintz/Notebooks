@@ -19,10 +19,10 @@ def count_model_params(model):
 def count_correct(guesses, labels):
     return (guesses == labels).float().sum()
 
-def save_model(model, epoch):
+def save_model(model, epoch, model_dir):
     savefile = "{}-e{}-{}.pt".format('pytorch-sentiment', epoch, int(time.time()))
     tlog('Saving model {}'.format(savefile))
-    path = os.path.join('models', savefile)
+    path = os.path.join(model_dir, savefile)
     # recommended way from https://pytorch.org/docs/stable/notes/serialization.html
     torch.save(model.state_dict(), path)
     return savefile
@@ -126,7 +126,7 @@ def train(model, iterator, loss_fn, optimizer, batch_size): # one epoch
         # get the data
         phrases, lengths = batch.phrases
         phrases = phrases.to(device)
-        lengths = length.to(device)
+        lengths = lengths.to(device)
         
         if phrases.shape[1] == batch_size:        
             # predict and learn
@@ -157,7 +157,7 @@ def evaluate(model, iterator, loss_fn, batch_size):
             # get the data
             phrases, lengths = batch.phrases
             phrases = phrases.to(device)
-            lengths = length.to(device)
+            lengths = lengths.to(device)
             
             if phrases.shape[1] == batch_size:        
                 # predict
@@ -171,7 +171,7 @@ def evaluate(model, iterator, loss_fn, batch_size):
     return curr_loss / len(iterator), curr_correct / (len(iterator) * batch_size) 
 
 
-def learn(model, train_iter, eval_iter, epochs, lr, batch_size):
+def learn(model, train_iter, eval_iter, epochs, lr, batch_size, output_dir):
     eval_losses = []
     eval_accs = []
     best_eval_acc = 0
@@ -196,7 +196,7 @@ def learn(model, train_iter, eval_iter, epochs, lr, batch_size):
         if eval_acc > best_eval_acc:
             tlog('  *** New accuracy peak, saving model')
             best_eval_acc = eval_acc
-            saved_model_filename = save_model(model, epoch + 1)
+            saved_model_filename = save_model(model, epoch + 1, output_dir)
     
     tlog('DONE')
     tlog('Best accuracy: {}'.format(best_eval_acc))
@@ -242,4 +242,4 @@ if __name__ == '__main__':
     embedding_vectors = t_iter.dataset.fields['phrases'].vocab.vectors
 
     sa = get_model(vocab_size, output_size, embedding_vectors, args.batch_size)
-    losses, accs = learn(sa, t_iter, e_iter, args.epochs, args.learning_rate, args.batch_size)
+    losses, accs = learn(sa, t_iter, e_iter, args.epochs, args.learning_rate, args.batch_size, args.output_data_dir)
