@@ -86,7 +86,7 @@ def get_data(batch_size):
 
 
     train_data = data.TabularDataset(
-        'train.tsv', # path to file
+        '/opt/ml/input/data/training/train.tsv', # path to file
         'TSV', # file format
         fields,
         skip_header = True # we have a header row
@@ -125,6 +125,8 @@ def train(model, iterator, loss_fn, optimizer, batch_size): # one epoch
     for batch in iterator:
         # get the data
         phrases, lengths = batch.phrases
+        phrases = phrases.to(device)
+        lengths = length.to(device)
         
         if phrases.shape[1] == batch_size:        
             # predict and learn
@@ -154,6 +156,8 @@ def evaluate(model, iterator, loss_fn, batch_size):
         for batch in iterator:
             # get the data
             phrases, lengths = batch.phrases
+            phrases = phrases.to(device)
+            lengths = length.to(device)
             
             if phrases.shape[1] == batch_size:        
                 # predict
@@ -201,6 +205,16 @@ def learn(model, train_iter, eval_iter, epochs, lr, batch_size):
 
 
 if __name__ == '__main__':
+#     print('**************************************************')
+#     for root, dirs, files in os.walk('/opt/ml'):
+#         print('{}:'.format(root))
+#         print('  {}'.format(dirs))
+#         for file in files:
+#             print('  {}'.format(file))
+#     print('**************************************************')
+
+    
+    os.system('python -m spacy download en')
     parser = argparse.ArgumentParser()
 
     # hyperparameters sent by the client are passed as command-line arguments to the script.
@@ -212,11 +226,10 @@ if __name__ == '__main__':
     # Data, model, and output directories
     parser.add_argument('--output-data-dir', type=str, default=os.environ['SM_OUTPUT_DATA_DIR'])
     parser.add_argument('--model-dir', type=str, default=os.environ['SM_MODEL_DIR'])
-    parser.add_argument('--train', type=str, default=os.environ['SM_CHANNEL_TRAIN'])
-    parser.add_argument('--test', type=str, default=os.environ['SM_CHANNEL_TEST'])
+    parser.add_argument('--train', type=str, default=os.environ['SM_CHANNEL_TRAINING'])
 
     args, _ = parser.parse_known_args()
-    print(args)
+#     print(args)
 
     if args.use_cuda and torch.cuda.is_available():
         device = torch.device('cuda')
