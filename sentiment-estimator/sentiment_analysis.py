@@ -143,6 +143,13 @@ def train(model, iterator, loss_fn, optimizer, batch_size): # one epoch
             print('hidden1     {}'.format(hidden[1].device))
             print('guesses     {}'.format(guesses.device))
             print('loss        {}'.format(loss.device))
+            print('model params:')
+            for p in model.parameters():
+                print('            {}'.format(p.device))
+            print('optimizer params:')
+            for g in optimizer.param_groups:
+                for p in g['params']:
+                    print('            {}'.format(p.device))
             print('**************************************************')
             print('**************************************************')
             raise RunTimeError('no stahp')
