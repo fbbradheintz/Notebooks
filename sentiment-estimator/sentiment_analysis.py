@@ -122,15 +122,21 @@ def debug_check_device(item):
     return True
 
 def debug_check_devices(phrases, hidden, guesses, loss, nn, opt, dump=False):
-    if !debug_check_device(phrases): diediedie('phrases device')
-    if !debug_check_device(hidden[0]): diediedie('h0 device')
-    if !debug_check_device(hidden[1]): diediedie('h1 device')
-    if !debug_check_device(loss): diediedie('loss device')
+    if !debug_check_device(phrases):
+        diediedie('phrases device')
+    if !debug_check_device(hidden[0]):
+        diediedie('h0 device')
+    if !debug_check_device(hidden[1]):
+        diediedie('h1 device')
+    if !debug_check_device(loss):
+        diediedie('loss device')
     for p in nn.parameters():
-        if !debug_check_device(p): diediedie('nn param device')
+        if !debug_check_device(p):
+            diediedie('nn param device')
     for g in opt.param_groups:
         for p in g['params']:
-            if !debug_check_device(p): diediedie('optim param device')
+            if !debug_check_device(p):
+                diediedie('optim param device')
     
 def train(model, iterator, loss_fn, optimizer, batch_size, device): # one epoch
     curr_loss = 0.
