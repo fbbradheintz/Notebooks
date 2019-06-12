@@ -155,7 +155,7 @@ def train(model, iterator, loss_fn, optimizer, batch_size, device): # one epoch
             optimizer.zero_grad()
             guesses, hidden = model(phrases, hidden)
             loss = loss_fn(guesses, batch.labels)
-            debug_check_devices(phrases, hidden, guesses, loss, model, optimizer)
+            # debug_check_devices(phrases, hidden, guesses, loss, model, optimizer)
             # DEBUG
 #             print('**************************************************')
 #             print('**************************************************')
