@@ -115,7 +115,7 @@ def get_model(output_size, vectors, batch_size, device):
 
 
 
-def train(model, iterator, loss_fn, optimizer, batch_size): # one epoch
+def train(model, iterator, loss_fn, optimizer, batch_size, device): # one epoch
     curr_loss = 0.
     curr_correct = 0.
     model.train() # makes sure that training-only fns, like dropout, are active
@@ -164,7 +164,7 @@ def train(model, iterator, loss_fn, optimizer, batch_size): # one epoch
     return curr_loss / len(iterator), curr_correct / (len(iterator) * batch_size)
 
 
-def evaluate(model, iterator, loss_fn, batch_size):
+def evaluate(model, iterator, loss_fn, batch_size, device):
     curr_loss = 0.
     curr_correct = 0.
     model.eval() # makes sure that training-only fns, like dropout, are inactive
