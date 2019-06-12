@@ -105,11 +105,15 @@ def get_data(batch_size):
     return train_iter, eval_iter, vocab_size, output_size
 
 
-def get_model(output_size, vectors, batch_size):
+def get_model(output_size, vectors, batch_size, device):
     tlog('Creating model...')
     sa = SentimentAnalyzer(EMBEDDING_SIZE, vectors, HIDDEN_SIZE, output_size, batch_size)
+    sa = sa.to(device)
     tlog('The model has {} trainable parameters'.format(count_model_params(sa)))
     tlog(sa)
+    print('**************************************************')
+    print(sa.device)
+    print('**************************************************')
     return sa
 
 
@@ -225,14 +229,14 @@ if __name__ == '__main__':
     args, _ = parser.parse_known_args()
 
     if args.use_cuda and torch.cuda.is_available():
-        device = torch.device('cuda')
+        target_device = torch.device('cuda')
         print('GPU ready to go!')
     else:
-        device = torch.device('cpu')
+        target_device = torch.device('cpu')
         print('*** GPU not available - running on CPU. ***')
 
     t_iter, e_iter, vocab_size, output_size = get_data(args.batch_size)
     embedding_vectors = t_iter.dataset.fields['phrases'].vocab.vectors
 
-    sa = get_model(output_size, embedding_vectors, args.batch_size)
+    sa = get_model(output_size, embedding_vectors, args.batch_size, target_device)
     losses, accs = learn(sa, t_iter, e_iter, args.epochs, args.learning_rate, args.batch_size, args.output_data_dir)
