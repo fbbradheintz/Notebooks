@@ -38,14 +38,12 @@ NUM_LAYERS = 2
 
 class SentimentAnalyzer(nn.Module):
     
-    def __init__(self, vocab_size, embedding_size, pretrained_embedding, hidden_size, output_size, batch_size):
+    def __init__(self, embedding_size, pretrained_embedding, hidden_size, output_size, batch_size):
         super(SentimentAnalyzer, self).__init__()
         self.hidden_size = hidden_size
         self.batch_size = batch_size
         
-        self.embedding = nn.Embedding(vocab_size, embedding_size)
-        self.embedding.weight.data.copy_(pretrained_embedding)
-        self.embedding.weight.requires_grad = False
+        self.embedding = nn.Embedding.from_pretrained(pretrained_embedding, freeze=True)
         
         self.lstm = nn.LSTM(
             input_size=embedding_size,
@@ -107,9 +105,9 @@ def get_data(batch_size):
     return train_iter, eval_iter, vocab_size, output_size
 
 
-def get_model(vocab_size, output_size, vectors, batch_size):
+def get_model(output_size, vectors, batch_size):
     tlog('Creating model...')
-    sa = SentimentAnalyzer(vocab_size, EMBEDDING_SIZE, vectors, HIDDEN_SIZE, output_size, batch_size)
+    sa = SentimentAnalyzer(EMBEDDING_SIZE, vectors, HIDDEN_SIZE, output_size, batch_size)
     tlog('The model has {} trainable parameters'.format(count_model_params(sa)))
     tlog(sa)
     return sa
@@ -205,15 +203,6 @@ def learn(model, train_iter, eval_iter, epochs, lr, batch_size, output_dir):
 
 
 if __name__ == '__main__':
-#     print('**************************************************')
-#     for root, dirs, files in os.walk('/opt/ml'):
-#         print('{}:'.format(root))
-#         print('  {}'.format(dirs))
-#         for file in files:
-#             print('  {}'.format(file))
-#     print('**************************************************')
-
-    
     os.system('python -m spacy download en')
     parser = argparse.ArgumentParser()
 
@@ -229,7 +218,6 @@ if __name__ == '__main__':
     parser.add_argument('--train', type=str, default=os.environ['SM_CHANNEL_TRAINING'])
 
     args, _ = parser.parse_known_args()
-#     print(args)
 
     if args.use_cuda and torch.cuda.is_available():
         device = torch.device('cuda')
@@ -241,5 +229,5 @@ if __name__ == '__main__':
     t_iter, e_iter, vocab_size, output_size = get_data(args.batch_size)
     embedding_vectors = t_iter.dataset.fields['phrases'].vocab.vectors
 
-    sa = get_model(vocab_size, output_size, embedding_vectors, args.batch_size)
+    sa = get_model(output_size, embedding_vectors, args.batch_size)
     losses, accs = learn(sa, t_iter, e_iter, args.epochs, args.learning_rate, args.batch_size, args.output_data_dir)
