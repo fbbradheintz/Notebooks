@@ -213,9 +213,14 @@ if __name__ == '__main__':
     parser.add_argument('--use-cuda', type=bool, default=True)
 
     # Data, model, and output directories
-    parser.add_argument('--output-data-dir', type=str, default=os.environ['SM_OUTPUT_DATA_DIR'])
-    parser.add_argument('--model-dir', type=str, default=os.environ['SM_MODEL_DIR'])
-    parser.add_argument('--train', type=str, default=os.environ['SM_CHANNEL_TRAINING'])
+    if 'SM_CHANNEL_TRAINING' in os.environ: # are we in sagemaker?
+        parser.add_argument('--output-data-dir', type=str, default=os.environ['SM_OUTPUT_DATA_DIR'])
+        parser.add_argument('--model-dir', type=str, default=os.environ['SM_MODEL_DIR'])
+        parser.add_argument('--train', type=str, default=os.environ['SM_CHANNEL_TRAINING'])
+    else:
+        parser.add_argument('--output-data-dir', type=str, default='models')
+        parser.add_argument('--model-dir', type=str, default='models')
+        parser.add_argument('--train', type=str, default='.')
 
     args, _ = parser.parse_known_args()
 
