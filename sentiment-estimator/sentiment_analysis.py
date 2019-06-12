@@ -84,7 +84,7 @@ def get_data(batch_size, device):
 
 
     train_data = data.TabularDataset(
-        '/content/train.tsv', # path to file
+        '/opt/ml/input/data/training/train.tsv', # path to file
         'TSV', # file format
         fields,
         skip_header = True # we have a header row
@@ -113,30 +113,6 @@ def get_model(output_size, vectors, batch_size, device):
     tlog(sa)
     return sa
 
-
-def diediedie(msg='no stahp'):
-    raise RuntimeError(msg)
-    
-def debug_check_device(item):
-    if item.device.type == 'cpu': return False
-    return True
-
-def debug_check_devices(phrases, hidden, guesses, loss, nn, opt, dump=False):
-    if not debug_check_device(phrases):
-        diediedie('phrases device')
-    if not debug_check_device(hidden[0]):
-        diediedie('h0 device')
-    if not debug_check_device(hidden[1]):
-        diediedie('h1 device')
-    if not debug_check_device(loss):
-        diediedie('loss device')
-    for p in nn.parameters():
-        if not debug_check_device(p):
-            diediedie('nn param device')
-    for g in opt.param_groups:
-        for p in g['params']:
-            if not debug_check_device(p):
-                diediedie('optim param device')
     
 def train(model, iterator, loss_fn, optimizer, batch_size, device): # one epoch
     curr_loss = 0.
@@ -147,34 +123,12 @@ def train(model, iterator, loss_fn, optimizer, batch_size, device): # one epoch
         # get the data
         phrases, lengths = batch.phrases
         hidden = model.init_hidden(device)
-#         phrases = phrases.to(device)
-#         lengths = lengths.to(device)
         
         if phrases.shape[1] == batch_size:        
             # predict and learn
             optimizer.zero_grad()
             guesses, hidden = model(phrases, hidden)
             loss = loss_fn(guesses, batch.labels)
-            # debug_check_devices(phrases, hidden, guesses, loss, model, optimizer)
-            # DEBUG
-#             print('**************************************************')
-#             print('**************************************************')
-#             print('phrases     {}'.format(phrases.device.type))
-#             print('hidden0     {}'.format(hidden[0].device.type))
-#             print('hidden1     {}'.format(hidden[1].device.type))
-#             print('guesses     {}'.format(guesses.device.type))
-#             print('loss        {}'.format(loss.device.type))
-#             print('model params:')
-#             for p in model.parameters():
-#                 print('            {}'.format(p.device.type))
-#             print('optimizer params:')
-#             for g in optimizer.param_groups:
-#                 for p in g['params']:
-#                     print('            {}'.format(p.device.type))
-#             print('**************************************************')
-#             print('**************************************************')
-#             diediedie()
-            # END DEBUG
             loss.backward()
             optimizer.step()
             
@@ -197,8 +151,6 @@ def evaluate(model, iterator, loss_fn, batch_size, device):
         for batch in iterator:
             # get the data
             phrases, lengths = batch.phrases
-#             phrases = phrases.to(device)
-#             lengths = lengths.to(device)
             hidden = model.init_hidden(device)
             
             if phrases.shape[1] == batch_size:        
@@ -218,8 +170,6 @@ def learn(model, train_iter, eval_iter, epochs, lr, batch_size, output_dir, devi
     eval_accs = []
     best_eval_acc = 0
     
-    # model = model.to(device)
-
     loss_fn = torch.nn.CrossEntropyLoss()
     
     params = filter(lambda p: p.requires_grad, model.parameters())
