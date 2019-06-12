@@ -84,7 +84,7 @@ def get_data(batch_size):
 
 
     train_data = data.TabularDataset(
-        '/opt/ml/input/data/training/train.tsv', # path to file
+        '/content/train.tsv', # path to file
         'TSV', # file format
         fields,
         skip_header = True # we have a header row
