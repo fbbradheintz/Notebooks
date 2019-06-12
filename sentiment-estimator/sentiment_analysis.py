@@ -114,7 +114,24 @@ def get_model(output_size, vectors, batch_size, device):
     return sa
 
 
+def diediedie(msg='no stahp'):
+    raise RuntimeError(msg)
+    
+def debug_check_device(item):
+    if item.device.type == 'cpu': return False
+    return True
 
+def debug_check_devices(phrases, hidden, guesses, loss, nn, opt, dump=False):
+    if !debug_check_device(phrases): diediedie('phrases device')
+    if !debug_check_device(hidden[0]): diediedie('h0 device')
+    if !debug_check_device(hidden[1]): diediedie('h1 device')
+    if !debug_check_device(loss): diediedie('loss device')
+    for p in nn.parameters():
+        if !debug_check_device(p): diediedie('nn param device')
+    for g in opt.param_groups:
+        for p in g['params']:
+            if !debug_check_device(p): diediedie('optim param device')
+    
 def train(model, iterator, loss_fn, optimizer, batch_size, device): # one epoch
     curr_loss = 0.
     curr_correct = 0.
@@ -132,24 +149,25 @@ def train(model, iterator, loss_fn, optimizer, batch_size, device): # one epoch
             optimizer.zero_grad()
             guesses, hidden = model(phrases, hidden)
             loss = loss_fn(guesses, batch.labels)
+            debug_check_devices(phrases, hidden, guesses, loss, model, optimizer)
             # DEBUG
 #             print('**************************************************')
 #             print('**************************************************')
-#             print('phrases     {}'.format(phrases.device))
-#             print('hidden0     {}'.format(hidden[0].device))
-#             print('hidden1     {}'.format(hidden[1].device))
-#             print('guesses     {}'.format(guesses.device))
-#             print('loss        {}'.format(loss.device))
+#             print('phrases     {}'.format(phrases.device.type))
+#             print('hidden0     {}'.format(hidden[0].device.type))
+#             print('hidden1     {}'.format(hidden[1].device.type))
+#             print('guesses     {}'.format(guesses.device.type))
+#             print('loss        {}'.format(loss.device.type))
 #             print('model params:')
 #             for p in model.parameters():
-#                 print('            {}'.format(p.device))
+#                 print('            {}'.format(p.device.type))
 #             print('optimizer params:')
 #             for g in optimizer.param_groups:
 #                 for p in g['params']:
-#                     print('            {}'.format(p.device))
+#                     print('            {}'.format(p.device.type))
 #             print('**************************************************')
 #             print('**************************************************')
-#             raise RuntimeError('no stahp')
+#             diediedie()
             # END DEBUG
             loss.backward()
             optimizer.step()
@@ -207,7 +225,7 @@ def learn(model, train_iter, eval_iter, epochs, lr, batch_size, output_dir, devi
         train_loss, train_acc = train(model, train_iter, loss_fn, optimizer, batch_size, device)
         tlog('  Training loss {}   acc {}'.format(train_loss, train_acc))
         
-        eval_loss, eval_acc = evaluate(model, eval_iter, loss_fn, batch_size)
+        eval_loss, eval_acc = evaluate(model, eval_iter, loss_fn, batch_size, device)
         tlog('  Validation loss {}   acc {}'.format(eval_loss, eval_acc))
         eval_losses.append(eval_loss)
         eval_accs.append(eval_acc)
