@@ -254,7 +254,8 @@ if __name__ == '__main__':
     parser.add_argument('--epochs', type=int, default=30)
     parser.add_argument('--batch-size', type=int, default=64)
     parser.add_argument('--learning-rate', type=float, default=1e-3)
-    parser.add_argument('--use-cuda', type=bool, default=True)
+    parser.add_argument('--cuda', dest='use_cuda', action='store_true')
+    parser.add_argument('--no-cuda', dest='use_cuda', action='store_false')
 
     # Data, model, and output directories
     if 'SM_CHANNEL_TRAINING' in os.environ: # are we in sagemaker?
