@@ -122,7 +122,7 @@ def debug_check_device(item):
     return True
 
 def debug_check_devices(phrases, hidden, guesses, loss, nn, opt, dump=False):
-    if !debug_check_device(phrases):
+    if not debug_check_device(phrases):
         diediedie('phrases device')
     if !debug_check_device(hidden[0]):
         diediedie('h0 device')
