@@ -70,7 +70,7 @@ VOCAB_VECTORS = "glove.6B.100d" # Stanford NLP GloVe (global vectors) for word r
 
 
 
-def get_data(batch_size):
+def get_data(batch_size, device):
     tlog('Preparing data...')
     phrases_fieldspec = data.Field(include_lengths=True, tokenize='spacy')
     labels_fieldspec = data.LabelField(dtype=torch.int64, sequential=False)
@@ -127,14 +127,26 @@ def train(model, iterator, loss_fn, optimizer, batch_size): # one epoch
     for batch in iterator:
         # get the data
         phrases, lengths = batch.phrases
-        phrases = phrases.to(device)
-        lengths = lengths.to(device)
+#         phrases = phrases.to(device)
+#         lengths = lengths.to(device)
         
         if phrases.shape[1] == batch_size:        
             # predict and learn
             optimizer.zero_grad()
             guesses, hidden = model(phrases, hidden)
             loss = loss_fn(guesses, batch.labels)
+            # DEBUG
+            print('**************************************************')
+            print('**************************************************')
+            print('phrases     {}'.format(phrases.device))
+            print('hidden0     {}'.format(hidden[0].device))
+            print('hidden1     {}'.format(hidden[1].device))
+            print('guesses     {}'.format(guesses.device))
+            print('loss        {}'.format(loss.device))
+            print('**************************************************')
+            print('**************************************************')
+            raise RunTimeError('no stahp')
+            # END DEBUG
             loss.backward()
             optimizer.step()
             
@@ -178,7 +190,7 @@ def learn(model, train_iter, eval_iter, epochs, lr, batch_size, output_dir):
     eval_accs = []
     best_eval_acc = 0
     
-    model = model.to(device)
+    # model = model.to(device)
 
     loss_fn = torch.nn.CrossEntropyLoss()
     
@@ -235,8 +247,8 @@ if __name__ == '__main__':
         target_device = torch.device('cpu')
         print('*** GPU not available - running on CPU. ***')
 
-    t_iter, e_iter, vocab_size, output_size = get_data(args.batch_size)
-    embedding_vectors = t_iter.dataset.fields['phrases'].vocab.vectors
+    t_iter, e_iter, vocab_size, output_size = get_data(args.batch_size, target_device)
+    embedding_vectors = t_iter.dataset.fields['phrases'].vocab.vectors.to(target_device)
 
     sa = get_model(output_size, embedding_vectors, args.batch_size, target_device)
     losses, accs = learn(sa, t_iter, e_iter, args.epochs, args.learning_rate, args.batch_size, args.output_data_dir)
