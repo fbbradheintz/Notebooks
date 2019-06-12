@@ -37,7 +37,6 @@ NUM_LAYERS = 2
 
 
 class SentimentAnalyzer(nn.Module):
-    
     def __init__(self, embedding_size, pretrained_embedding, hidden_size, output_size, batch_size):
         super(SentimentAnalyzer, self).__init__()
         self.hidden_size = hidden_size
@@ -54,13 +53,14 @@ class SentimentAnalyzer(nn.Module):
         self.fc = nn.Linear(hidden_size, output_size)
         
     def forward(self, phrases, hidden):
-        if hidden is None: # tuple w/ 2 for LSTM, make one for RNN or GRU
-            hidden = (torch.zeros(NUM_LAYERS, self.batch_size, self.hidden_size, dtype=torch.float).to(device),
-                      torch.zeros(NUM_LAYERS, self.batch_size, self.hidden_size, dtype=torch.float).to(device))
         x = self.embedding(phrases)
         x, hidden = self.lstm(x, hidden)
         x = self.fc(hidden[0][-1]) # remove [0] for RNN or GRU, [-1] is for layers
         return x.squeeze(0), hidden
+    
+    def init_hidden(self, device):
+        return (torch.zeros(NUM_LAYERS, self.batch_size, self.hidden_size, dtype=torch.float).to(device),
+                torch.zeros(NUM_LAYERS, self.batch_size, self.hidden_size, dtype=torch.float).to(device))
 
 
 
@@ -118,12 +118,12 @@ def get_model(output_size, vectors, batch_size, device):
 def train(model, iterator, loss_fn, optimizer, batch_size): # one epoch
     curr_loss = 0.
     curr_correct = 0.
-    hidden = None
     model.train() # makes sure that training-only fns, like dropout, are active
     
     for batch in iterator:
         # get the data
         phrases, lengths = batch.phrases
+        hidden = model.init_hidden(device)
 #         phrases = phrases.to(device)
 #         lengths = lengths.to(device)
         
@@ -167,15 +167,15 @@ def train(model, iterator, loss_fn, optimizer, batch_size): # one epoch
 def evaluate(model, iterator, loss_fn, batch_size):
     curr_loss = 0.
     curr_correct = 0.
-    hidden = None
     model.eval() # makes sure that training-only fns, like dropout, are inactive
     
     with torch.no_grad(): # not training
         for batch in iterator:
             # get the data
             phrases, lengths = batch.phrases
-            phrases = phrases.to(device)
-            lengths = lengths.to(device)
+#             phrases = phrases.to(device)
+#             lengths = lengths.to(device)
+            hidden = model.init_hidden(device)
             
             if phrases.shape[1] == batch_size:        
                 # predict
@@ -189,7 +189,7 @@ def evaluate(model, iterator, loss_fn, batch_size):
     return curr_loss / len(iterator), curr_correct / (len(iterator) * batch_size) 
 
 
-def learn(model, train_iter, eval_iter, epochs, lr, batch_size, output_dir):
+def learn(model, train_iter, eval_iter, epochs, lr, batch_size, output_dir, device):
     eval_losses = []
     eval_accs = []
     best_eval_acc = 0
@@ -204,7 +204,7 @@ def learn(model, train_iter, eval_iter, epochs, lr, batch_size, output_dir):
     for epoch in range(epochs):
         tlog('EPOCH {} of {}'.format(epoch + 1, epochs))
         
-        train_loss, train_acc = train(model, train_iter, loss_fn, optimizer, batch_size)
+        train_loss, train_acc = train(model, train_iter, loss_fn, optimizer, batch_size, device)
         tlog('  Training loss {}   acc {}'.format(train_loss, train_acc))
         
         eval_loss, eval_acc = evaluate(model, eval_iter, loss_fn, batch_size)
@@ -255,4 +255,4 @@ if __name__ == '__main__':
     embedding_vectors = t_iter.dataset.fields['phrases'].vocab.vectors.to(target_device)
 
     sa = get_model(output_size, embedding_vectors, args.batch_size, target_device)
-    losses, accs = learn(sa, t_iter, e_iter, args.epochs, args.learning_rate, args.batch_size, args.output_data_dir)
+    losses, accs = learn(sa, t_iter, e_iter, args.epochs, args.learning_rate, args.batch_size, args.output_data_dir, target_device)
