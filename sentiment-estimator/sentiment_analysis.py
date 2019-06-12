@@ -111,9 +111,6 @@ def get_model(output_size, vectors, batch_size, device):
     sa = sa.to(device)
     tlog('The model has {} trainable parameters'.format(count_model_params(sa)))
     tlog(sa)
-    print('**************************************************')
-    print(sa.device)
-    print('**************************************************')
     return sa
 
 
